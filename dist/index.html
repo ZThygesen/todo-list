@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>To Do List</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header></header>
+    <div class="container">
+        <div class="sidebar">
+            <button id="all">All Tasks</button>
+            <button id="today">Today's Tasks</button>
+            <button id="week">This Week's Tasks</button>
+            <button id="projects">Projects</button>
+            <div class="projects-container"></div>
+            <button id="add-project">Add Project</button>
+        </div>
+        <div class="content">
+            <button id="add-task">Add Task</button>
+            <h1 class="title"></h1>
+            <div class="tasks"></div>
+        </div>
+        <div class="modal task">
+            <div class="modal-content">
+                <span class="close task">&times;</span>
+                <form id="create-task">
+                    <div class="form">
+                        <div class="left">
+                            <label for="task">Task</label>
+                            <input type="text" id="task">
+                            <label for="description">Description</label>
+                            <textarea id="description" cols="30" rows="5"></textarea>
+                        </div>
+                        <div class="right">
+                            <label for="has-due-date">Set date?</label>
+                            <input type="checkbox" id="has-due-date">
+                            <label for="date">Due Date</label>
+                            <input type="date" id="date" disabled>
+                            <label for="priority">Priority</label>
+                            <select id="priority">
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        
+                            <label for="task-project">Project</label>
+                            <select id="task-project"></select>
+                        </div>
+                    </div>
+                    <button type="submit" id="submit-task">Submit</button>
+                </form>
+            </div>
+        </div>
+        <div class="modal project">
+            <div class="modal-content">
+                <span class="close project">&times;</span>
+                <form id="create-task">
+                    <label for="project">Project</label>
+                    <input type="text" id="project">
+
+                    <button type="submit" id="submit-project">Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+	<script src="main.js"></script>
+  </body>
+</html>

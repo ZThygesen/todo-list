@@ -1,0 +1,26 @@
+{
+  "name": "odin-todo_list_copy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZThygesen/odin-todo_list_copy.git"
+  },
+  "author": "ZThygesen",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ZThygesen/odin-todo_list_copy/issues"
+  },
+  "homepage": "https://github.com/ZThygesen/odin-todo_list_copy#readme",
+  "devDependencies": {
+    "webpack": "^5.73.0",
+    "webpack-cli": "^4.10.0"
+  },
+  "dependencies": {
+    "date-fns": "^2.28.0"
+  }
+}
