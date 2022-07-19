@@ -9,28 +9,44 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ List)
 /* harmony export */ });
-/* harmony import */ var _Project__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
-/* harmony import */ var _TaskDisplay__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
-/* harmony import */ var date_fns__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(8);
+/* harmony import */ var _Project_Project__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+/* harmony import */ var _Project_ProjectDisplay__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(44);
+/* harmony import */ var _Task_TaskDisplay__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(4);
+/* harmony import */ var date_fns__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(8);
+/* harmony import */ var date_fns__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(42);
+/* harmony import */ var date_fns__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(41);
+/* harmony import */ var _Example__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(46);
 
 
 
 
+
+
+
+const projectsArrow = document.querySelector('#expand-arrow');
 const projectsContainer = document.querySelector('.projects-container');
 
 const title = document.querySelector('.title');
-const tasks = document.querySelector('.tasks');
+const tasks = document.querySelector('.task-list');
 
 class List {
     constructor() {
         this.self = this;
-        this.projects = [new _Project__WEBPACK_IMPORTED_MODULE_0__["default"]('None')];
-        this.mode = 1;
+        this.projects = [new _Project_Project__WEBPACK_IMPORTED_MODULE_0__["default"]('None')];
+        this.currList = 1;
+
+        //populateWithExampleTasks();
+    }
+
+    changeList(mode) {
+        this.currList = mode;
+        this.update();
     }
 
     getProjects() { return this.projects; }
+    setProjects(projects) { this.projects = projects; this.update(); }
 
-    getTaskProject(task) {
+    getProjectByTask(task) {
         let project;
         this.projects.forEach(p => {
             if(task.getProject() === p.getName()) {
@@ -41,9 +57,20 @@ class List {
         return project;
     }
 
+    getProjectByName(name) {
+        let project;
+        this.projects.forEach(p => {
+            if(p.getName() === name) {
+                project = p;
+            }
+        });
+
+        return project;
+    }
+
     addProject(project) { 
         this.projects.push(project);
-        this.listProjects();
+        this.update();
     }
 
     addTask(task, project) {
@@ -53,20 +80,43 @@ class List {
         this.update();
     }
 
+    removeProject(project) {
+        let target;
+        for (let i = 0; i < this.projects.length; i++) {
+            if (this.projects[i].getName() === project.getName()) {
+                target = i;
+                break;
+            }
+        }
+        this.projects.splice(target, 1);
+        this.update();
+    }
+
     removeTask(task) {
-        const project = this.getTaskProject(task);
+        const project = this.getProjectByTask(task);
         project.removeTask(task);
+        this.update();
+    }
+
+    updateTaskProject(task, newProj) {
+        if (task.getProject() === newProj) { return; }
+       
+        this.removeTask(task);
+        this.addTask(task, newProj);
+    }
+
+    updateProjectTasks(project) {
+        project.getTasks().forEach(task => {
+            task.setProject(project.getName());
+        });
     }
 
     listProjects() {
         projectsContainer.innerHTML = '';
-        this.projects.forEach(p => {
-            if (p.getName() !== 'None') {
-                const project = document.createElement('div');
-                project.innerHTML = `
-                <button id="${p.getName()}">${p.getName()}</button>
-                `;
-                projectsContainer.appendChild(project);
+        this.projects.forEach(project => {
+            if (project.getName() !== 'None') {
+                const newProject = new _Project_ProjectDisplay__WEBPACK_IMPORTED_MODULE_1__["default"](project, this.self);
+                newProject.displayProject();
             }
         });
     }
@@ -81,39 +131,112 @@ class List {
     }
 
     update() {
+        localStorage.setItem('projects', JSON.stringify(this.projects));
+    
         this.listProjects();
-        this.listAllTasks();
+        this.listTasks();
+    }
+
+    listTasks() {
+        tasks.innerHTML = '';
+        switch(this.currList) {
+            case(1):
+                title.textContent = 'All Tasks';
+                this.listAllTasks();
+                break;
+            case(2):
+                title.textContent = 'Today\'s Tasks';
+                this.listTodaysTasks();
+                break;
+            case(3):
+                title.textContent = 'This week\'s Tasks';
+                this.listWeekTasks();
+                break;
+            default:
+                title.textContent = `${this.currList}`;
+                this.listProjectTasks();
+                break;
+        }
     }
 
 
     listAllTasks() {
-        title.textContent = 'All Tasks';
-        tasks.innerHTML = '';
+        let tasks = [];
+        let noDate = [];
         this.projects.forEach(project => {
             project.getTasks().forEach(task => {
-                const newTask = new _TaskDisplay__WEBPACK_IMPORTED_MODULE_1__["default"](task, this.self);
-                newTask.displayTask();
+                if (task.getDate() === '') { noDate.push(task) }
+                else { tasks.push({task: task, date: task.getDateObject()}); }
             });
+        });
+
+        let sorted = this.sortTasksByDate(tasks).concat(noDate);
+        sorted.forEach(task => {
+            const newTask = new _Task_TaskDisplay__WEBPACK_IMPORTED_MODULE_2__["default"](task, this.self);
+            newTask.displayTask();
         });
     }
 
     listTodaysTasks() {
-        title.textContent = 'Today\'s Tasks';
-        tasks.innerHTML = '';
         this.projects.forEach(project => {
             project.getTasks().forEach(task => {
                 if(this.isToday(task)) {
-                    const newTask = new _TaskDisplay__WEBPACK_IMPORTED_MODULE_1__["default"](task, this.self);
+                    const newTask = new _Task_TaskDisplay__WEBPACK_IMPORTED_MODULE_2__["default"](task, this.self);
                     newTask.displayTask();
                 }
             });
         });
     }
 
+    listWeekTasks() {
+        this.projects.forEach(project => {
+            project.getTasks().forEach(task => {
+                if(this.isThisWeek(task)) {
+                    const newTask = new _Task_TaskDisplay__WEBPACK_IMPORTED_MODULE_2__["default"](task, this.self);
+                    newTask.displayTask();
+                }
+            });
+        });
+    }
+
+    listProjectTasks() {
+        const project = this.getProjectByName(this.currList);
+        if (project === undefined) { this.currList = 1; this.update(); return; }
+        project.getTasks().forEach(task => {
+            const newTask = new _Task_TaskDisplay__WEBPACK_IMPORTED_MODULE_2__["default"](task, this.self);
+            newTask.displayTask();
+        });
+    }
+
     isToday(task) {
-        const today = (0,date_fns__WEBPACK_IMPORTED_MODULE_2__["default"])(new Date(), 'dd.MM.yyyy');
-        console.log(today);
-        console.log(task.getDate());
+        const today = (0,date_fns__WEBPACK_IMPORTED_MODULE_4__["default"])(new Date(), 'yyyy-MM-dd');
+        return today === task.getDate();
+    }
+
+    isThisWeek(task) {
+        const today = (0,date_fns__WEBPACK_IMPORTED_MODULE_5__["default"])((0,date_fns__WEBPACK_IMPORTED_MODULE_4__["default"])(new Date(), 'yyyy-MM-dd'));
+        let dates = [(0,date_fns__WEBPACK_IMPORTED_MODULE_4__["default"])(today, 'yyyy-MM-dd')];
+        for (let i = 1; i < 8; i++) {
+            dates.push((0,date_fns__WEBPACK_IMPORTED_MODULE_4__["default"])((0,date_fns__WEBPACK_IMPORTED_MODULE_6__["default"])(today, i), 'yyyy-MM-dd'));
+        }
+
+        return dates.includes(task.getDate());
+        const week = (0,date_fns__WEBPACK_IMPORTED_MODULE_4__["default"])((0,date_fns__WEBPACK_IMPORTED_MODULE_6__["default"])(today, 7), 'EEEE, MMM Q, yyyy');
+    }
+
+    expandProjects() {
+        projectsContainer.classList.toggle('hidden');
+        projectsArrow.classList.toggle('rotate');
+    }
+
+    sortTasksByDate(tasks) {
+        const sortedObj = tasks.sort((task1, task2) => Number(task1.date) - Number(task2.date),);
+        let sortedTasks = [];
+        
+        for (let key in sortedObj) {
+            sortedTasks.push(sortedObj[key].task);
+        }
+        return sortedTasks;
     }
 }
 
@@ -145,9 +268,7 @@ class Project {
                 break;
             }
         }
-        console.log(this.tasks);
         this.tasks.splice(target, 1);
-        console.log(this.tasks);
     }
 }
 
@@ -159,6 +280,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ Task)
 /* harmony export */ });
+/* harmony import */ var date_fns__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8);
+/* harmony import */ var date_fns__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(42);
+
+
 class Task {
     constructor(name, description, date, priority, project) {
         this.name = name;
@@ -184,6 +309,15 @@ class Task {
     setProject(project) { this.project = project; }
     setCompleted(bool) { this.completed = bool; }
 
+    getDateObject() {
+        const [y, m, d] = this.date.split('-');
+        return new Date(y, m, d);
+    }
+
+    getFormattedDate() {
+        return (this.hasDate()) ? (0,date_fns__WEBPACK_IMPORTED_MODULE_0__["default"])((0,date_fns__WEBPACK_IMPORTED_MODULE_1__["default"])(this.date), 'E, MMM do, yyyy') : 'No due date';
+    }
+
     hasDate() {
         return (this.date === '') ? false : true;
     }
@@ -197,19 +331,20 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ TaskDisplay)
 /* harmony export */ });
-/* harmony import */ var _EditModal__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
+/* harmony import */ var _EditTaskModal__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
 
 
-const tasks = document.querySelector('.tasks');
+const tasks = document.querySelector('.task-list');
 
 const words = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'];
 
 function toWords(number) {
     let numStr = number.toString();
-    let result = '';
+    let result = '_';
     for (let i = 0; i < numStr.length; i++) {
         result += words[numStr.at(i)];
     }
+
     return result;
 }
 
@@ -230,10 +365,8 @@ class TaskDisplay {
         this.taskEdit;
         this.taskRemove;
 
-        this.editModal = new _EditModal__WEBPACK_IMPORTED_MODULE_0__["default"](this.id, this.task, this.list);
+        this.editModal;
     }
-
-    getContainer() { return this.container; }
 
     displayTask() {
         this.createTask();
@@ -241,15 +374,17 @@ class TaskDisplay {
         this.taskCheck = document.querySelector(`.check.${this.id}`);
         this.taskCheck.checked = this.task.getCompleted();
         this.checkTask();
-        this.taskCheck.addEventListener('click', () => this.checkTask());
-        this.taskDetails = document.querySelector(`.details.${this.id}`);
+        this.taskCheck.addEventListener('change', () => this.checkTask());
+
+        this.taskDetails = document.querySelector(`.details-btn.${this.id}`);
         this.taskDetails.addEventListener('click', () => this.showDetails());
+
         this.taskEdit = document.querySelector(`.edit.${this.id}`);
-        this.taskEdit.addEventListener('click', () => {this.editTask();});
+        this.taskEdit.addEventListener('click', () => this.createModal());
+
         this.taskRemove = document.querySelector(`.remove.${this.id}`);
         this.taskRemove.addEventListener('click', () => this.removeTask());
 
-        this.editModal.setOpenElem(this.taskEdit);
     }
 
     createTask() {
@@ -259,38 +394,47 @@ class TaskDisplay {
         <div class="task ${this.id}">
             <input type="checkbox" class="check ${this.id}">
             <p>${this.task.getName()}</p>
-            <p>${this.task.getDate()}</p>
-            <button class="details ${this.id}">Details</button>
-            <p>${this.task.getPriority()} priority</p>
-            <button class="edit ${this.id}">Edit</button>
-            <button class="remove ${this.id}">Remove</button>
+            <p class="center" id="break">${this.task.getFormattedDate()}</p>
+            <button class="details-btn ${this.id}">Details</button>
+            <p class="center" style="color: ${this.getPriorityColor()};">${this.task.getPriority()}</p>
+            <i class="fa-regular fa-pen-to-square fa-xl edit ${this.id}"></i>
+            <i class="fa-regular fa-trash-can fa-xl remove ${this.id}"></i>
         </div>
         `;
         tasks.appendChild(this.taskContainer);
     }
 
+    createModal() {
+        this.editModal = new _EditTaskModal__WEBPACK_IMPORTED_MODULE_0__["default"](this.task, this.list);
+    }
+
     checkTask() {
         if (this.taskCheck.checked) {
-            this.taskContainer.style.opacity = 0.5;
+            this.taskContainer.style.opacity = 0.2;
             this.task.setCompleted(true);
         } else {
             this.taskContainer.style.opacity = 1;
             this.task.setCompleted(false);
         }
+        localStorage.setItem('projects', JSON.stringify(this.list.getProjects()));
     };
 
     showDetails() {
         if (this.taskContainer.children[1] !== undefined) { return; }
 
         const details = document.createElement('div');
-        details.classList.add('details');
+        details.className = 'task-details';
         details.innerHTML = `
+        <div class="left">
+            <p><span class="bold">Task:</span> ${this.task.getName()}</p>
+            <p><span class="bold">Notes:</span> ${this.task.getDescription()}</p>
+        </div>
+        <div class="right">
+            <p><span class="bold">Due:</span> ${this.task.getFormattedDate()}</p>
+            <p><span class="bold">Priority:</span> ${this.task.getPriority()}</p>
+            <p><span class="bold">Project:</span> ${this.task.getProject()}</p>
+        </div>
         <span class="close ${this.id}">&times;</span>
-        <p>Task: ${this.task.getName()}</p>
-        <p>Description: ${this.task.getDescription()}</p>
-        <p>Due: ${this.task.getDate()}</p>
-        <p>Priority: ${this.task.getPriority()}</p>
-        <p>Project: ${this.task.getProject()}</p>
         `;
         this.taskContainer.appendChild(details);
 
@@ -298,14 +442,20 @@ class TaskDisplay {
         close.addEventListener('click', () => details.remove());
     }
 
-
     removeTask() {
         this.taskContainer.remove();
         this.list.removeTask(this.task);
     }
 
-    editTask() {
-        this.editModal.setOpenElem(this.taskEdit);
+    getPriorityColor() {
+        switch (this.task.getPriority()) {
+            case('Low'):
+                return '#007500';
+            case('Medium'):
+                return '#fc6a03';
+            case('High'):
+                return '#ff0000';
+        }
     }
 }
 
@@ -316,13 +466,12 @@ class TaskDisplay {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (/* binding */ EditModal)
+/* harmony export */   "default": () => (/* binding */ EditTaskModal)
 /* harmony export */ });
 const container = document.querySelector('.container');
 
-class EditModal {
-    constructor(id, task, list) {
-        this.id = id;
+class EditTaskModal {
+    constructor(task, list) {
         this.task = task;
         this.list = list;
 
@@ -331,62 +480,58 @@ class EditModal {
 
         // modal components
         this.editModal = document.createElement('div');
-        this.editModal.classList.add('modal');
-        this.editModal.classList.add(`${this.id}`);
+        this.editModal.className = 'modal edit task';
         this.editModal.innerHTML = this.generateModal();
         container.appendChild(this.editModal);
 
-        this.closeTaskModal = document.querySelector(`.close.edit.${this.id}`);
-        this.saveEdit = document.querySelector(`.save-edit.${this.id}`);
+        this.closeTaskModal = document.querySelector('.close.edit.task');
+        this.saveEdit = document.querySelector('.save.edit');
 
         // modal inputs
-        this.taskName = document.querySelector(`.task-edit.${this.id}`);
-        this.taskDescription = document.querySelector(`.description-edit.${this.id}`);
-        this.taskHasDate = document.querySelector(`.has-due-date-edit.${this.id}`);
-        this.taskDate = document.querySelector(`.date-edit.${this.id}`);
-        this.taskPriority = document.querySelector(`.priority-edit.${this.id}`);
-        this.taskProject = document.querySelector(`.task-project-edit.${this.id}`);
+        this.taskName = document.querySelector('.task-name.edit');
+        this.taskDescription = document.querySelector('.description.edit');
+        this.taskHasDate = document.querySelector('.has-due-date.edit');
+        this.taskDate = document.querySelector('.date.edit');
+        this.taskPriority = document.querySelector('.priority.edit');
+        this.taskProject = document.querySelector('.task-project.edit');
 
         // event listeners
         this.closeTaskModal.addEventListener('click', () => this.closeModal());
-        this.saveEdit.addEventListener('click', (e) => {
-            e.preventDefault();
-
-            this.task.setName(this.taskName.value);
-            this.task.setDescription(this.taskDescription.value);
-            this.task.setDate(this.taskDate.value);
-            this.task.setPriority(this.taskPriority.value);
-            this.task.setProject(this.taskProject.value);
-            this.list.update();
-            this.closeModal();
-        });
+        this.saveEdit.addEventListener('click', (e) => this.saveChanges(e));
         this.taskHasDate.addEventListener('click', () => this.toggleDate());
-    }
 
-    setOpenElem(elem) {
-        this.editTask = elem;
-        this.editTask.addEventListener('click', () => this.displayModal());
+        this.displayModal();
     }
 
     displayModal() {
         this.editModal.style.display = 'block';
 
-        // add projects to modal
-        this.taskProject.innerHTML = '';
-        this.list.getProjects().forEach(project => {
-            const option = document.createElement('option');
-            option.value = project.getName();
-            option.textContent = project.getName();
-            this.taskProject.appendChild(option);
-        });
+        this.addProjectOptions();
+    
         this.taskHasDate.checked = this.task.hasDate();
         this.taskDate.disabled = !this.task.hasDate();
         this.taskPriority.value = this.task.getPriority();
         this.taskProject.value = this.task.getProject();
     }
 
+    saveChanges(e) {
+        e.preventDefault();
+       if (this.taskName.value === '') { alert('Task name required'); return; }
+        
+        this.task.setName(this.taskName.value);
+        this.task.setDescription(this.taskDescription.value);
+        this.task.setDate(this.taskDate.value);
+        this.task.setPriority(this.taskPriority.value);
+
+        this.list.updateTaskProject(this.task, this.taskProject.value);
+        this.task.setProject(this.taskProject.value);
+
+        this.list.update();
+        this.closeModal();
+    }
+
     closeModal() {
-        this.editModal.style.display = 'none';
+        this.editModal.remove();
     }
 
     toggleDate() {
@@ -398,35 +543,45 @@ class EditModal {
         }
     }
 
+    addProjectOptions() {
+        this.taskProject.innerHTML = '';
+        this.list.getProjects().forEach(project => {
+            const option = document.createElement('option');
+            option.value = project.getName();
+            option.textContent = project.getName();
+            this.taskProject.appendChild(option);
+        });
+    }
+
     generateModal() {
         return `
         <div class="modal-content">
-            <span class="close edit ${this.id}">&times;</span>
+            <span class="close edit task">&times;</span>
             <form id="create-task">
                 <div class="form">
                     <div class="left">
                         <label for="task-edit">Task</label>
-                        <input class="task-edit ${this.id}" type="text" id="task-edit" value="${this.task.getName()}">
-                        <label for="description-edit">Description</label>
-                        <textarea class="description-edit ${this.id}" id="description-edit" cols="30" rows="5">${this.task.getDescription()}</textarea>
+                        <input class="task-name edit" type="text" id="task-edit" value="${this.task.getName()}">
+                        <label for="description-edit">Notes</label>
+                        <textarea class="description edit" id="description-edit" cols="30" rows="5">${this.task.getDescription()}</textarea>
                     </div>
                     <div class="right">
                         <label for="has-due-date-edit">Set date?</label>
-                        <input class="has-due-date-edit ${this.id}" type="checkbox" id="has-due-date-edit">
+                        <input class="has-due-date edit" type="checkbox" id="has-due-date-edit">
                         <label for="date-edit">Due Date</label>
-                        <input class="date-edit ${this.id}" type="date" id="date-edit" value="${this.task.getDate()}">
+                        <input class="date edit" type="date" id="date-edit" value="${this.task.getDate()}">
                         <label for="priority-edit">Priority</label>
-                        <select class="priority-edit ${this.id}" id="priority-edit">
-                            <option value="low">Low</option>
-                            <option value="medium">Medium</option>
-                            <option value="high">High</option>
+                        <select class="priority edit" id="priority-edit">
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
                         </select>
                     
                         <label for="task-project-edit">Project</label>
-                        <select class="task-project-edit ${this.id}" id="task-project-edit"></select>
+                        <select class="task-project edit" id="task-project-edit"></select>
                     </div>
                 </div>
-                <button class="save-edit ${this.id}"type="button" id="save-edit">Save</button>
+                <button class="save edit" type="button" id="save-edit">Save</button>
             </form>
         </div>
         `;
@@ -473,14 +628,7 @@ class TaskModal {
 
     displayModal() {
         this.taskModal.style.display = 'block';
-        // add projects to modal
-        this.taskProject.innerHTML = '';
-        this.list.getProjects().forEach(project => {
-            const option = document.createElement('option');
-            option.value = project.getName();
-            option.textContent = project.getName();
-            this.taskProject.appendChild(option);
-        });
+        this.addProjectOptions();
     }
 
     closeModal() {
@@ -491,12 +639,14 @@ class TaskModal {
         this.taskHasDate.checked = false;
         this.taskDate.value = '';
         this.taskDate.disabled = true;
-        this.taskPriority.value = 'low';
+        this.taskPriority.value = 'Low';
         this.taskProject.value = 'None';
     }
 
     createTask(e) {
         e.preventDefault();
+        if (this.taskName.value === '') { alert('Task name required'); return; }
+
         const task = new _Task__WEBPACK_IMPORTED_MODULE_0__["default"](this.taskName.value, this.taskDescription.value, this.taskDate.value, this.taskPriority.value, this.taskProject.value);
         this.list.addTask(task, this.taskProject.value);
         this.closeModal();
@@ -510,6 +660,16 @@ class TaskModal {
             this.taskDate.value = '';
         }
     }
+
+    addProjectOptions() {
+        this.taskProject.innerHTML = '';
+        this.list.getProjects().forEach(project => {
+            const option = document.createElement('option');
+            option.value = project.getName();
+            option.textContent = project.getName();
+            this.taskProject.appendChild(option);
+        });
+    }
 }
 
 /***/ }),
@@ -521,8 +681,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (/* binding */ ProjectModal)
 /* harmony export */ });
 /* harmony import */ var _Project__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
-/* harmony import */ var _List__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1);
-
 
 
 class ProjectModal {
@@ -543,8 +701,8 @@ class ProjectModal {
         this.projectName = document.querySelector('#project');
 
         // event listeners
-        this.addProject.addEventListener('click', () => this.projectModal.style.display = 'block');
-        this.closeProjectModal.addEventListener('click', () => this.projectModal.style.display = 'none');        
+        this.addProject.addEventListener('click', () => this.displayProject());
+        this.closeProjectModal.addEventListener('click', () => this.closeModal());        
         this.submitProject.addEventListener('click', (e) => self.createProject(e));
     }
 
@@ -559,6 +717,8 @@ class ProjectModal {
 
     createProject(e) {
         e.preventDefault();
+        if (this.projectName.value === '') { alert('Project name required'); return; }
+
         const project = new _Project__WEBPACK_IMPORTED_MODULE_0__["default"](this.projectName.value);
 
         if (this.list.projectExists(project.getName())) { alert('Project name already exists.'); return; }
@@ -3393,6 +3553,668 @@ function throwProtectedError(token, format, input) {
   }
 }
 
+/***/ }),
+/* 41 */
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ addDays)
+/* harmony export */ });
+/* harmony import */ var _lib_toInteger_index_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(20);
+/* harmony import */ var _toDate_index_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(21);
+/* harmony import */ var _lib_requiredArgs_index_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
+
+
+
+/**
+ * @name addDays
+ * @category Day Helpers
+ * @summary Add the specified number of days to the given date.
+ *
+ * @description
+ * Add the specified number of days to the given date.
+ *
+ * ### v2.0.0 breaking changes:
+ *
+ * - [Changes that are common for the whole library](https://github.com/date-fns/date-fns/blob/master/docs/upgradeGuide.md#Common-Changes).
+ *
+ * @param {Date|Number} date - the date to be changed
+ * @param {Number} amount - the amount of days to be added. Positive decimals will be rounded using `Math.floor`, decimals less than zero will be rounded using `Math.ceil`.
+ * @returns {Date} - the new date with the days added
+ * @throws {TypeError} - 2 arguments required
+ *
+ * @example
+ * // Add 10 days to 1 September 2014:
+ * const result = addDays(new Date(2014, 8, 1), 10)
+ * //=> Thu Sep 11 2014 00:00:00
+ */
+
+function addDays(dirtyDate, dirtyAmount) {
+  (0,_lib_requiredArgs_index_js__WEBPACK_IMPORTED_MODULE_0__["default"])(2, arguments);
+  var date = (0,_toDate_index_js__WEBPACK_IMPORTED_MODULE_1__["default"])(dirtyDate);
+  var amount = (0,_lib_toInteger_index_js__WEBPACK_IMPORTED_MODULE_2__["default"])(dirtyAmount);
+
+  if (isNaN(amount)) {
+    return new Date(NaN);
+  }
+
+  if (!amount) {
+    // If 0 days, no-op to avoid changing times in the hour before end of DST
+    return date;
+  }
+
+  date.setDate(date.getDate() + amount);
+  return date;
+}
+
+/***/ }),
+/* 42 */
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ parseISO)
+/* harmony export */ });
+/* harmony import */ var _constants_index_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(43);
+/* harmony import */ var _lib_requiredArgs_index_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
+/* harmony import */ var _lib_toInteger_index_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(20);
+
+
+
+/**
+ * @name parseISO
+ * @category Common Helpers
+ * @summary Parse ISO string
+ *
+ * @description
+ * Parse the given string in ISO 8601 format and return an instance of Date.
+ *
+ * Function accepts complete ISO 8601 formats as well as partial implementations.
+ * ISO 8601: http://en.wikipedia.org/wiki/ISO_8601
+ *
+ * If the argument isn't a string, the function cannot parse the string or
+ * the values are invalid, it returns Invalid Date.
+ *
+ * ### v2.0.0 breaking changes:
+ *
+ * - [Changes that are common for the whole library](https://github.com/date-fns/date-fns/blob/master/docs/upgradeGuide.md#Common-Changes).
+ *
+ * - The previous `parse` implementation was renamed to `parseISO`.
+ *
+ *   ```javascript
+ *   // Before v2.0.0
+ *   parse('2016-01-01')
+ *
+ *   // v2.0.0 onward
+ *   parseISO('2016-01-01')
+ *   ```
+ *
+ * - `parseISO` now validates separate date and time values in ISO-8601 strings
+ *   and returns `Invalid Date` if the date is invalid.
+ *
+ *   ```javascript
+ *   parseISO('2018-13-32')
+ *   //=> Invalid Date
+ *   ```
+ *
+ * - `parseISO` now doesn't fall back to `new Date` constructor
+ *   if it fails to parse a string argument. Instead, it returns `Invalid Date`.
+ *
+ * @param {String} argument - the value to convert
+ * @param {Object} [options] - an object with options.
+ * @param {0|1|2} [options.additionalDigits=2] - the additional number of digits in the extended year format
+ * @returns {Date} the parsed date in the local time zone
+ * @throws {TypeError} 1 argument required
+ * @throws {RangeError} `options.additionalDigits` must be 0, 1 or 2
+ *
+ * @example
+ * // Convert string '2014-02-11T11:30:30' to date:
+ * const result = parseISO('2014-02-11T11:30:30')
+ * //=> Tue Feb 11 2014 11:30:30
+ *
+ * @example
+ * // Convert string '+02014101' to date,
+ * // if the additional number of digits in the extended year format is 1:
+ * const result = parseISO('+02014101', { additionalDigits: 1 })
+ * //=> Fri Apr 11 2014 00:00:00
+ */
+
+function parseISO(argument, dirtyOptions) {
+  (0,_lib_requiredArgs_index_js__WEBPACK_IMPORTED_MODULE_0__["default"])(1, arguments);
+  var options = dirtyOptions || {};
+  var additionalDigits = options.additionalDigits == null ? 2 : (0,_lib_toInteger_index_js__WEBPACK_IMPORTED_MODULE_1__["default"])(options.additionalDigits);
+
+  if (additionalDigits !== 2 && additionalDigits !== 1 && additionalDigits !== 0) {
+    throw new RangeError('additionalDigits must be 0, 1 or 2');
+  }
+
+  if (!(typeof argument === 'string' || Object.prototype.toString.call(argument) === '[object String]')) {
+    return new Date(NaN);
+  }
+
+  var dateStrings = splitDateString(argument);
+  var date;
+
+  if (dateStrings.date) {
+    var parseYearResult = parseYear(dateStrings.date, additionalDigits);
+    date = parseDate(parseYearResult.restDateString, parseYearResult.year);
+  }
+
+  if (!date || isNaN(date.getTime())) {
+    return new Date(NaN);
+  }
+
+  var timestamp = date.getTime();
+  var time = 0;
+  var offset;
+
+  if (dateStrings.time) {
+    time = parseTime(dateStrings.time);
+
+    if (isNaN(time)) {
+      return new Date(NaN);
+    }
+  }
+
+  if (dateStrings.timezone) {
+    offset = parseTimezone(dateStrings.timezone);
+
+    if (isNaN(offset)) {
+      return new Date(NaN);
+    }
+  } else {
+    var dirtyDate = new Date(timestamp + time); // js parsed string assuming it's in UTC timezone
+    // but we need it to be parsed in our timezone
+    // so we use utc values to build date in our timezone.
+    // Year values from 0 to 99 map to the years 1900 to 1999
+    // so set year explicitly with setFullYear.
+
+    var result = new Date(0);
+    result.setFullYear(dirtyDate.getUTCFullYear(), dirtyDate.getUTCMonth(), dirtyDate.getUTCDate());
+    result.setHours(dirtyDate.getUTCHours(), dirtyDate.getUTCMinutes(), dirtyDate.getUTCSeconds(), dirtyDate.getUTCMilliseconds());
+    return result;
+  }
+
+  return new Date(timestamp + time + offset);
+}
+var patterns = {
+  dateTimeDelimiter: /[T ]/,
+  timeZoneDelimiter: /[Z ]/i,
+  timezone: /([Z+-].*)$/
+};
+var dateRegex = /^-?(?:(\d{3})|(\d{2})(?:-?(\d{2}))?|W(\d{2})(?:-?(\d{1}))?|)$/;
+var timeRegex = /^(\d{2}(?:[.,]\d*)?)(?::?(\d{2}(?:[.,]\d*)?))?(?::?(\d{2}(?:[.,]\d*)?))?$/;
+var timezoneRegex = /^([+-])(\d{2})(?::?(\d{2}))?$/;
+
+function splitDateString(dateString) {
+  var dateStrings = {};
+  var array = dateString.split(patterns.dateTimeDelimiter);
+  var timeString; // The regex match should only return at maximum two array elements.
+  // [date], [time], or [date, time].
+
+  if (array.length > 2) {
+    return dateStrings;
+  }
+
+  if (/:/.test(array[0])) {
+    timeString = array[0];
+  } else {
+    dateStrings.date = array[0];
+    timeString = array[1];
+
+    if (patterns.timeZoneDelimiter.test(dateStrings.date)) {
+      dateStrings.date = dateString.split(patterns.timeZoneDelimiter)[0];
+      timeString = dateString.substr(dateStrings.date.length, dateString.length);
+    }
+  }
+
+  if (timeString) {
+    var token = patterns.timezone.exec(timeString);
+
+    if (token) {
+      dateStrings.time = timeString.replace(token[1], '');
+      dateStrings.timezone = token[1];
+    } else {
+      dateStrings.time = timeString;
+    }
+  }
+
+  return dateStrings;
+}
+
+function parseYear(dateString, additionalDigits) {
+  var regex = new RegExp('^(?:(\\d{4}|[+-]\\d{' + (4 + additionalDigits) + '})|(\\d{2}|[+-]\\d{' + (2 + additionalDigits) + '})$)');
+  var captures = dateString.match(regex); // Invalid ISO-formatted year
+
+  if (!captures) return {
+    year: NaN,
+    restDateString: ''
+  };
+  var year = captures[1] ? parseInt(captures[1]) : null;
+  var century = captures[2] ? parseInt(captures[2]) : null; // either year or century is null, not both
+
+  return {
+    year: century === null ? year : century * 100,
+    restDateString: dateString.slice((captures[1] || captures[2]).length)
+  };
+}
+
+function parseDate(dateString, year) {
+  // Invalid ISO-formatted year
+  if (year === null) return new Date(NaN);
+  var captures = dateString.match(dateRegex); // Invalid ISO-formatted string
+
+  if (!captures) return new Date(NaN);
+  var isWeekDate = !!captures[4];
+  var dayOfYear = parseDateUnit(captures[1]);
+  var month = parseDateUnit(captures[2]) - 1;
+  var day = parseDateUnit(captures[3]);
+  var week = parseDateUnit(captures[4]);
+  var dayOfWeek = parseDateUnit(captures[5]) - 1;
+
+  if (isWeekDate) {
+    if (!validateWeekDate(year, week, dayOfWeek)) {
+      return new Date(NaN);
+    }
+
+    return dayOfISOWeekYear(year, week, dayOfWeek);
+  } else {
+    var date = new Date(0);
+
+    if (!validateDate(year, month, day) || !validateDayOfYearDate(year, dayOfYear)) {
+      return new Date(NaN);
+    }
+
+    date.setUTCFullYear(year, month, Math.max(dayOfYear, day));
+    return date;
+  }
+}
+
+function parseDateUnit(value) {
+  return value ? parseInt(value) : 1;
+}
+
+function parseTime(timeString) {
+  var captures = timeString.match(timeRegex);
+  if (!captures) return NaN; // Invalid ISO-formatted time
+
+  var hours = parseTimeUnit(captures[1]);
+  var minutes = parseTimeUnit(captures[2]);
+  var seconds = parseTimeUnit(captures[3]);
+
+  if (!validateTime(hours, minutes, seconds)) {
+    return NaN;
+  }
+
+  return hours * _constants_index_js__WEBPACK_IMPORTED_MODULE_2__.millisecondsInHour + minutes * _constants_index_js__WEBPACK_IMPORTED_MODULE_2__.millisecondsInMinute + seconds * 1000;
+}
+
+function parseTimeUnit(value) {
+  return value && parseFloat(value.replace(',', '.')) || 0;
+}
+
+function parseTimezone(timezoneString) {
+  if (timezoneString === 'Z') return 0;
+  var captures = timezoneString.match(timezoneRegex);
+  if (!captures) return 0;
+  var sign = captures[1] === '+' ? -1 : 1;
+  var hours = parseInt(captures[2]);
+  var minutes = captures[3] && parseInt(captures[3]) || 0;
+
+  if (!validateTimezone(hours, minutes)) {
+    return NaN;
+  }
+
+  return sign * (hours * _constants_index_js__WEBPACK_IMPORTED_MODULE_2__.millisecondsInHour + minutes * _constants_index_js__WEBPACK_IMPORTED_MODULE_2__.millisecondsInMinute);
+}
+
+function dayOfISOWeekYear(isoWeekYear, week, day) {
+  var date = new Date(0);
+  date.setUTCFullYear(isoWeekYear, 0, 4);
+  var fourthOfJanuaryDay = date.getUTCDay() || 7;
+  var diff = (week - 1) * 7 + day + 1 - fourthOfJanuaryDay;
+  date.setUTCDate(date.getUTCDate() + diff);
+  return date;
+} // Validation functions
+// February is null to handle the leap year (using ||)
+
+
+var daysInMonths = [31, null, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+function isLeapYearIndex(year) {
+  return year % 400 === 0 || year % 4 === 0 && year % 100 !== 0;
+}
+
+function validateDate(year, month, date) {
+  return month >= 0 && month <= 11 && date >= 1 && date <= (daysInMonths[month] || (isLeapYearIndex(year) ? 29 : 28));
+}
+
+function validateDayOfYearDate(year, dayOfYear) {
+  return dayOfYear >= 1 && dayOfYear <= (isLeapYearIndex(year) ? 366 : 365);
+}
+
+function validateWeekDate(_year, week, day) {
+  return week >= 1 && week <= 53 && day >= 0 && day <= 6;
+}
+
+function validateTime(hours, minutes, seconds) {
+  if (hours === 24) {
+    return minutes === 0 && seconds === 0;
+  }
+
+  return seconds >= 0 && seconds < 60 && minutes >= 0 && minutes < 60 && hours >= 0 && hours < 25;
+}
+
+function validateTimezone(_hours, minutes) {
+  return minutes >= 0 && minutes <= 59;
+}
+
+/***/ }),
+/* 43 */
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "daysInWeek": () => (/* binding */ daysInWeek),
+/* harmony export */   "maxTime": () => (/* binding */ maxTime),
+/* harmony export */   "millisecondsInHour": () => (/* binding */ millisecondsInHour),
+/* harmony export */   "millisecondsInMinute": () => (/* binding */ millisecondsInMinute),
+/* harmony export */   "millisecondsInSecond": () => (/* binding */ millisecondsInSecond),
+/* harmony export */   "minTime": () => (/* binding */ minTime),
+/* harmony export */   "minutesInHour": () => (/* binding */ minutesInHour),
+/* harmony export */   "monthsInQuarter": () => (/* binding */ monthsInQuarter),
+/* harmony export */   "monthsInYear": () => (/* binding */ monthsInYear),
+/* harmony export */   "quartersInYear": () => (/* binding */ quartersInYear),
+/* harmony export */   "secondsInHour": () => (/* binding */ secondsInHour),
+/* harmony export */   "secondsInMinute": () => (/* binding */ secondsInMinute)
+/* harmony export */ });
+/**
+ * Days in 1 week.
+ *
+ * @name daysInWeek
+ * @constant
+ * @type {number}
+ * @default
+ */
+var daysInWeek = 7;
+/**
+ * Maximum allowed time.
+ *
+ * @name maxTime
+ * @constant
+ * @type {number}
+ * @default
+ */
+
+var maxTime = Math.pow(10, 8) * 24 * 60 * 60 * 1000;
+/**
+ * Milliseconds in 1 minute
+ *
+ * @name millisecondsInMinute
+ * @constant
+ * @type {number}
+ * @default
+ */
+
+var millisecondsInMinute = 60000;
+/**
+ * Milliseconds in 1 hour
+ *
+ * @name millisecondsInHour
+ * @constant
+ * @type {number}
+ * @default
+ */
+
+var millisecondsInHour = 3600000;
+/**
+ * Milliseconds in 1 second
+ *
+ * @name millisecondsInSecond
+ * @constant
+ * @type {number}
+ * @default
+ */
+
+var millisecondsInSecond = 1000;
+/**
+ * Minimum allowed time.
+ *
+ * @name minTime
+ * @constant
+ * @type {number}
+ * @default
+ */
+
+var minTime = -maxTime;
+/**
+ * Minutes in 1 hour
+ *
+ * @name minutesInHour
+ * @constant
+ * @type {number}
+ * @default
+ */
+
+var minutesInHour = 60;
+/**
+ * Months in 1 quarter
+ *
+ * @name monthsInQuarter
+ * @constant
+ * @type {number}
+ * @default
+ */
+
+var monthsInQuarter = 3;
+/**
+ * Months in 1 year
+ *
+ * @name monthsInYear
+ * @constant
+ * @type {number}
+ * @default
+ */
+
+var monthsInYear = 12;
+/**
+ * Quarters in 1 year
+ *
+ * @name quartersInYear
+ * @constant
+ * @type {number}
+ * @default
+ */
+
+var quartersInYear = 4;
+/**
+ * Seconds in 1 hour
+ *
+ * @name secondsInHour
+ * @constant
+ * @type {number}
+ * @default
+ */
+
+var secondsInHour = 3600;
+/**
+ * Seconds in 1 minute
+ *
+ * @name secondsInMinute
+ * @constant
+ * @type {number}
+ * @default
+ */
+
+var secondsInMinute = 60;
+
+/***/ }),
+/* 44 */
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ ProjectDisplay)
+/* harmony export */ });
+/* harmony import */ var _EditProjectModal__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(45);
+
+
+const projects = document.querySelector('.projects-container');
+
+const words = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'];
+
+function toWords(number) {
+    let numStr = number.toString();
+    let result = '_';
+    for (let i = 0; i < numStr.length; i++) {
+        result += words[numStr.at(i)];
+    }
+    return result;
+}
+
+let id = 0;
+function uniqueID() {
+    return toWords(id++);
+}
+
+class ProjectDisplay {
+    constructor(project, list) {
+        this.id = uniqueID();
+        this.list = list;
+
+        this.project = project;
+        this.projectContainer;
+        this.projectSelect;
+        this.projectEdit;
+        this.projectRemove;
+
+        this.editModal;
+    }
+
+    displayProject() {
+        this.createProject();
+
+        this.projectSelect = document.querySelector(`.project-name.${this.id}`);
+        this.projectSelect.addEventListener('click', () => this.list.changeList(this.project.getName()));
+
+        this.projectEdit = document.querySelector(`.edit-project.${this.id}`);
+        this.projectEdit.addEventListener('click', () => this.createModal());
+
+        this.projectRemove = document.querySelector(`.remove-project.${this.id}`);
+        this.projectRemove.addEventListener('click', () => this.removeProject());
+    }
+
+    createProject() {
+        this.projectContainer = document.createElement('div');
+        this.projectContainer.classList.add('project-container');
+        this.projectContainer.innerHTML = `
+        <div class="project ${this.id}">
+            <p class="project-name ${this.id}">${this.project.getName()}</p>
+            <i class="fa-regular fa-pen-to-square fa-lg edit-project ${this.id}"></i>
+            <i class="fa-regular fa-trash-can fa-lg remove-project ${this.id}"></i>
+        </div>
+        `;
+        projects.appendChild(this.projectContainer);
+    }
+
+    createModal() {
+        this.editModal = new _EditProjectModal__WEBPACK_IMPORTED_MODULE_0__["default"](this.project, this.list)
+    }
+
+    removeProject() {
+        this.projectContainer.remove();
+        this.list.removeProject(this.project);
+    }
+}
+
+/***/ }),
+/* 45 */
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ EditProjectModal)
+/* harmony export */ });
+const container = document.querySelector('.container');
+
+class EditProjectModal {
+    constructor(project, list) {
+        this.project = project;
+        this.list = list;
+
+        // open modal
+        this.editProject;
+
+        // modal components
+        this.editModal = document.createElement('div');
+        this.editModal.className = 'modal edit project';
+        this.editModal.innerHTML = this.generateModal();
+        container.appendChild(this.editModal);
+
+        this.closeProjectModal = document.querySelector('.close.edit.project');
+        this.saveEdit = document.querySelector('.save.edit');
+
+        // modal inputs
+        this.projectName = document.querySelector('.project-name.edit');
+
+        // event listeners
+        this.closeProjectModal.addEventListener('click', () => this.closeModal());
+        this.saveEdit.addEventListener('click', (e) => this.saveChanges(e));
+
+        this.displayModal();
+    }
+
+    displayModal() {
+        this.editModal.style.display = 'block';
+    }
+
+    saveChanges(e) {
+        e.preventDefault();
+        if (this.projectName.value === '') { alert('Project name required'); return; }
+
+        this.project.setName(this.projectName.value);
+        this.list.updateProjectTasks(this.project);
+        this.list.update();
+        this.closeModal(); 
+    }
+
+    closeModal() {
+        this.editModal.remove();
+    }
+
+    generateModal() {
+        return `
+        <div class="modal-content">
+            <span class="close edit project">&times;</span>
+            <form id="create-project">
+                <label for="project-edit">Project</label>
+                <input class="project-name edit" type="text" value="${this.project.getName()}">
+                <button class="save edit" type="submit" id="save-edit">Save</button>
+            </form>
+        </div>
+        `;
+    }
+}
+
+/***/ }),
+/* 46 */
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "populateWithExampleTasks": () => (/* binding */ populateWithExampleTasks)
+/* harmony export */ });
+/* harmony import */ var _Task_Task__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3);
+/* harmony import */ var _Project_Project__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
+
+
+
+function populateWithExampleTasks() {
+    
+
+}
+
 /***/ })
 /******/ 	]);
 /************************************************************************/
@@ -3455,25 +4277,70 @@ var __webpack_exports__ = {};
 (() => {
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _List__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
-/* harmony import */ var _Task__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
-/* harmony import */ var _TaskModal__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6);
-/* harmony import */ var _ProjectModal__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(7);
+/* harmony import */ var _Task_TaskModal__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6);
+/* harmony import */ var _Project_ProjectModal__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7);
+/* harmony import */ var _Project_Project__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(2);
+/* harmony import */ var _Task_Task__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(3);
 
 
 
 
 
-const projects = new _List__WEBPACK_IMPORTED_MODULE_0__["default"]();
 
-new _TaskModal__WEBPACK_IMPORTED_MODULE_2__["default"](projects);
+const list = new _List__WEBPACK_IMPORTED_MODULE_0__["default"]();
+let projects;
 
-new _ProjectModal__WEBPACK_IMPORTED_MODULE_3__["default"](projects);
+new _Task_TaskModal__WEBPACK_IMPORTED_MODULE_1__["default"](list);
+
+new _Project_ProjectModal__WEBPACK_IMPORTED_MODULE_2__["default"](list);
+
+const expandProjects = document.querySelector('#projects');
+expandProjects.addEventListener('click', () => list.expandProjects());
 
 const allTasks = document.querySelector('#all');
-allTasks.addEventListener('click', () => projects.listAllTasks());
+allTasks.addEventListener('click', () => list.changeList(1));
 
 const todayTasks = document.querySelector('#today');
-todayTasks.addEventListener('click', () => projects.listTodaysTasks());
+todayTasks.addEventListener('click', () => list.changeList(2));
+
+const weekTasks = document.querySelector('#week');
+weekTasks.addEventListener('click', () => list.changeList(3));
+
+if (localStorage.getItem('projects')) {
+    projects = JSON.parse(localStorage.getItem('projects'));
+    let newProjects = createObjects();
+
+    list.setProjects(newProjects);
+} else {
+    console.log('here')
+    localStorage.setItem('projects', JSON.stringify([{"name":"None","tasks":[{"name":"Schedule Dr. appointment","description":"Don't tell anyone about the rash","date":"2022-07-20","priority":"High","project":"None","completed":false},{"name":"Register for classes","description":"Plz no 8am","date":"2022-08-03","priority":"High","project":"None","completed":false}]},{"name":"Homework","tasks":[{"name":"Finish program","description":"Call Ellie for bugs","date":"2022-07-18","priority":"Medium","project":"Homework","completed":false},{"name":"Study for exam","description":"Remember, if you don't know it by 10pm you don't know it","date":"2022-07-22","priority":"Medium","project":"Homework","completed":false},{"name":"Read Ch. 1 - 2","description":"Lol jk, you don't actually read textbooks, remember?","date":"2022-07-24","priority":"Low","project":"Homework","completed":false}]},{"name":"Errands","tasks":[{"name":"Get groceries","description":"Don't go while hungry... bad things happen","date":"2022-07-30","priority":"Medium","project":"Errands","completed":true},{"name":"Ship package","description":"Yes, I regret 1am Amazon purchases","date":"","priority":"Low","project":"Errands","completed":false},{"name":"Fix car tire","description":"We love potholes!","date":"2022-07-18","priority":"High","project":"Errands","completed":true}]},{"name":"Chores","tasks":[{"name":"Clean room","description":"Shove everything into the closet === clean","date":"","priority":"Low","project":"Chores","completed":false},{"name":"Do dishes","description":"Letting them \"soak\" doesn't count","date":"2022-07-21","priority":"Low","project":"Chores","completed":true},{"name":"Meal prep","description":"Munchies for the whole week","date":"2022-07-23","priority":"Medium","project":"Chores","completed":false}]}]))
+    projects = JSON.parse(localStorage.getItem('projects'));
+    let newProjects = createObjects();
+
+    list.setProjects(newProjects);
+}
+
+function createObjects() {
+    projects = JSON.parse(localStorage.getItem('projects'));
+    let newProjects = [];
+    projects.forEach(p => {
+        let project = new _Project_Project__WEBPACK_IMPORTED_MODULE_3__["default"](p.name);
+
+        let tasks = p.tasks;
+        let newTasks = [];
+        tasks.forEach(t => {
+            let task = new _Task_Task__WEBPACK_IMPORTED_MODULE_4__["default"](t.name, t.description, t.date, t.priority, t.project);
+            task.completed = t.completed;
+            newTasks.push(task);
+            task.getDateObject();
+        })
+        project.tasks = newTasks;
+
+        newProjects.push(project);
+    });
+
+    return newProjects;
+}
 
 })();
 

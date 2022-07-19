@@ -1,27 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>To Do List</title>
     <link rel="stylesheet" href="./styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Edu+SA+Beginner:wght@400;500;600;700&family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a1fb4a08a6.js" crossorigin="anonymous"></script>
   </head>
   <body>
-    <header></header>
+    <header>
+        <i class="fa-solid fa-list-check fa-3x"></i>
+        <p>To Do List</p>
+    </header>
     <div class="container">
         <div class="sidebar">
-            <button id="all">All Tasks</button>
-            <button id="today">Today's Tasks</button>
-            <button id="week">This Week's Tasks</button>
-            <button id="projects">Projects</button>
+            <button id="all" class="side">All Tasks</button>
+            <button id="today" class="side">Today's Tasks</button>
+            <button id="week" class="side">This Week's Tasks</button>
+            <button id="projects" class="side">Projects<i class="fa-solid fa-angles-down fa-xs rotate" id="expand-arrow"></i></button>
             <div class="projects-container"></div>
-            <button id="add-project">Add Project</button>
+            <button id="add-project" class="side"><i class="fa-regular fa-plus fa-2x"></i>Add Project</button>
         </div>
         <div class="content">
-            <button id="add-task">Add Task</button>
-            <h1 class="title"></h1>
-            <div class="tasks"></div>
+            <div class="container">
+                <h1 class="title"></h1>
+                <button id="add-task"><i class="fa-regular fa-plus fa-2x"></i>Add Task</button>
+                <div class="tasks">
+                    <div class="labels">
+                        <p></p>
+                        <p>Task</p>
+                        <p class="center">Due</p>
+                        <p></p>
+                        <p class="center">Priority</p>
+                        <p></p>
+                        <p></p>
+                    </div>
+                    <div class="task-list"></div>
+                </div>
+            </div>
         </div>
         <div class="modal task">
             <div class="modal-content">
@@ -31,7 +51,7 @@
                         <div class="left">
                             <label for="task">Task</label>
                             <input type="text" id="task">
-                            <label for="description">Description</label>
+                            <label for="description">Notes</label>
                             <textarea id="description" cols="30" rows="5"></textarea>
                         </div>
                         <div class="right">
@@ -41,9 +61,9 @@
                             <input type="date" id="date" disabled>
                             <label for="priority">Priority</label>
                             <select id="priority">
-                                <option value="low">Low</option>
-                                <option value="medium">Medium</option>
-                                <option value="high">High</option>
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
                             </select>
                         
                             <label for="task-project">Project</label>
@@ -57,7 +77,7 @@
         <div class="modal project">
             <div class="modal-content">
                 <span class="close project">&times;</span>
-                <form id="create-task">
+                <form id="create-project">
                     <label for="project">Project</label>
                     <input type="text" id="project">
 
