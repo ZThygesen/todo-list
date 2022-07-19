@@ -12,12 +12,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Project_Project__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
 /* harmony import */ var _Project_ProjectDisplay__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(44);
 /* harmony import */ var _Task_TaskDisplay__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(4);
-/* harmony import */ var date_fns__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(8);
-/* harmony import */ var date_fns__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(42);
-/* harmony import */ var date_fns__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(41);
-/* harmony import */ var _Example__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(46);
-
-
+/* harmony import */ var date_fns__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8);
+/* harmony import */ var date_fns__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(42);
+/* harmony import */ var date_fns__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(41);
 
 
 
@@ -209,19 +206,19 @@ class List {
     }
 
     isToday(task) {
-        const today = (0,date_fns__WEBPACK_IMPORTED_MODULE_4__["default"])(new Date(), 'yyyy-MM-dd');
+        const today = (0,date_fns__WEBPACK_IMPORTED_MODULE_3__["default"])(new Date(), 'yyyy-MM-dd');
         return today === task.getDate();
     }
 
     isThisWeek(task) {
-        const today = (0,date_fns__WEBPACK_IMPORTED_MODULE_5__["default"])((0,date_fns__WEBPACK_IMPORTED_MODULE_4__["default"])(new Date(), 'yyyy-MM-dd'));
-        let dates = [(0,date_fns__WEBPACK_IMPORTED_MODULE_4__["default"])(today, 'yyyy-MM-dd')];
+        const today = (0,date_fns__WEBPACK_IMPORTED_MODULE_4__["default"])((0,date_fns__WEBPACK_IMPORTED_MODULE_3__["default"])(new Date(), 'yyyy-MM-dd'));
+        let dates = [(0,date_fns__WEBPACK_IMPORTED_MODULE_3__["default"])(today, 'yyyy-MM-dd')];
         for (let i = 1; i < 8; i++) {
-            dates.push((0,date_fns__WEBPACK_IMPORTED_MODULE_4__["default"])((0,date_fns__WEBPACK_IMPORTED_MODULE_6__["default"])(today, i), 'yyyy-MM-dd'));
+            dates.push((0,date_fns__WEBPACK_IMPORTED_MODULE_3__["default"])((0,date_fns__WEBPACK_IMPORTED_MODULE_5__["default"])(today, i), 'yyyy-MM-dd'));
         }
 
         return dates.includes(task.getDate());
-        const week = (0,date_fns__WEBPACK_IMPORTED_MODULE_4__["default"])((0,date_fns__WEBPACK_IMPORTED_MODULE_6__["default"])(today, 7), 'EEEE, MMM Q, yyyy');
+        const week = (0,date_fns__WEBPACK_IMPORTED_MODULE_3__["default"])((0,date_fns__WEBPACK_IMPORTED_MODULE_5__["default"])(today, 7), 'EEEE, MMM Q, yyyy');
     }
 
     expandProjects() {
@@ -4195,24 +4192,6 @@ class EditProjectModal {
         </div>
         `;
     }
-}
-
-/***/ }),
-/* 46 */
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "populateWithExampleTasks": () => (/* binding */ populateWithExampleTasks)
-/* harmony export */ });
-/* harmony import */ var _Task_Task__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3);
-/* harmony import */ var _Project_Project__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
-
-
-
-function populateWithExampleTasks() {
-    
-
 }
 
 /***/ })

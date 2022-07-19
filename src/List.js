@@ -3,8 +3,6 @@ import ProjectDisplay from './Project/ProjectDisplay'
 import TaskDisplay from './Task/TaskDisplay';
 import {format, addDays, parseISO} from 'date-fns';
 
-import {populateWithExampleTasks} from './Example';
-
 const projectsArrow = document.querySelector('#expand-arrow');
 const projectsContainer = document.querySelector('.projects-container');
 
