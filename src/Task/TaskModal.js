@@ -29,14 +29,7 @@ export default class TaskModal {
 
     displayModal() {
         this.taskModal.style.display = 'block';
-        // add projects to modal
-        this.taskProject.innerHTML = '';
-        this.list.getProjects().forEach(project => {
-            const option = document.createElement('option');
-            option.value = project.getName();
-            option.textContent = project.getName();
-            this.taskProject.appendChild(option);
-        });
+        this.addProjectOptions();
     }
 
     closeModal() {
@@ -47,12 +40,14 @@ export default class TaskModal {
         this.taskHasDate.checked = false;
         this.taskDate.value = '';
         this.taskDate.disabled = true;
-        this.taskPriority.value = 'low';
+        this.taskPriority.value = 'Low';
         this.taskProject.value = 'None';
     }
 
     createTask(e) {
         e.preventDefault();
+        if (this.taskName.value === '') { alert('Task name required'); return; }
+
         const task = new Task(this.taskName.value, this.taskDescription.value, this.taskDate.value, this.taskPriority.value, this.taskProject.value);
         this.list.addTask(task, this.taskProject.value);
         this.closeModal();
@@ -65,5 +60,15 @@ export default class TaskModal {
             this.taskDate.disabled = true;
             this.taskDate.value = '';
         }
+    }
+
+    addProjectOptions() {
+        this.taskProject.innerHTML = '';
+        this.list.getProjects().forEach(project => {
+            const option = document.createElement('option');
+            option.value = project.getName();
+            option.textContent = project.getName();
+            this.taskProject.appendChild(option);
+        });
     }
 }

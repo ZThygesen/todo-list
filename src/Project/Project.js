@@ -18,8 +18,6 @@ export default class Project {
                 break;
             }
         }
-        console.log(this.tasks);
         this.tasks.splice(target, 1);
-        console.log(this.tasks);
     }
 }

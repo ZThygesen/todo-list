@@ -1,5 +1,4 @@
 import Project from "./Project";
-import List from "./List";
 
 export default class ProjectModal {
     constructor(list) {
@@ -19,8 +18,8 @@ export default class ProjectModal {
         this.projectName = document.querySelector('#project');
 
         // event listeners
-        this.addProject.addEventListener('click', () => this.projectModal.style.display = 'block');
-        this.closeProjectModal.addEventListener('click', () => this.projectModal.style.display = 'none');        
+        this.addProject.addEventListener('click', () => this.displayProject());
+        this.closeProjectModal.addEventListener('click', () => this.closeModal());        
         this.submitProject.addEventListener('click', (e) => self.createProject(e));
     }
 
@@ -35,6 +34,8 @@ export default class ProjectModal {
 
     createProject(e) {
         e.preventDefault();
+        if (this.projectName.value === '') { alert('Project name required'); return; }
+
         const project = new Project(this.projectName.value);
 
         if (this.list.projectExists(project.getName())) { alert('Project name already exists.'); return; }

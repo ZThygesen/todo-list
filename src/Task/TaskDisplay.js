@@ -1,15 +1,16 @@
-import EditModal from './EditModal';
+import EditModal from './EditTaskModal';
 
-const tasks = document.querySelector('.tasks');
+const tasks = document.querySelector('.task-list');
 
 const words = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'];
 
 function toWords(number) {
     let numStr = number.toString();
-    let result = '';
+    let result = '_';
     for (let i = 0; i < numStr.length; i++) {
         result += words[numStr.at(i)];
     }
+
     return result;
 }
 
@@ -30,10 +31,8 @@ export default class TaskDisplay {
         this.taskEdit;
         this.taskRemove;
 
-        this.editModal = new EditModal(this.id, this.task, this.list);
+        this.editModal;
     }
-
-    getContainer() { return this.container; }
 
     displayTask() {
         this.createTask();
@@ -41,15 +40,17 @@ export default class TaskDisplay {
         this.taskCheck = document.querySelector(`.check.${this.id}`);
         this.taskCheck.checked = this.task.getCompleted();
         this.checkTask();
-        this.taskCheck.addEventListener('click', () => this.checkTask());
-        this.taskDetails = document.querySelector(`.details.${this.id}`);
+        this.taskCheck.addEventListener('change', () => this.checkTask());
+
+        this.taskDetails = document.querySelector(`.details-btn.${this.id}`);
         this.taskDetails.addEventListener('click', () => this.showDetails());
+
         this.taskEdit = document.querySelector(`.edit.${this.id}`);
-        this.taskEdit.addEventListener('click', () => {this.editTask();});
+        this.taskEdit.addEventListener('click', () => this.createModal());
+
         this.taskRemove = document.querySelector(`.remove.${this.id}`);
         this.taskRemove.addEventListener('click', () => this.removeTask());
 
-        this.editModal.setOpenElem(this.taskEdit);
     }
 
     createTask() {
@@ -59,38 +60,47 @@ export default class TaskDisplay {
         <div class="task ${this.id}">
             <input type="checkbox" class="check ${this.id}">
             <p>${this.task.getName()}</p>
-            <p>${this.task.getDate()}</p>
-            <button class="details ${this.id}">Details</button>
-            <p>${this.task.getPriority()} priority</p>
-            <button class="edit ${this.id}">Edit</button>
-            <button class="remove ${this.id}">Remove</button>
+            <p class="center" id="break">${this.task.getFormattedDate()}</p>
+            <button class="details-btn ${this.id}">Details</button>
+            <p class="center" style="color: ${this.getPriorityColor()};">${this.task.getPriority()}</p>
+            <i class="fa-regular fa-pen-to-square fa-xl edit ${this.id}"></i>
+            <i class="fa-regular fa-trash-can fa-xl remove ${this.id}"></i>
         </div>
         `;
         tasks.appendChild(this.taskContainer);
     }
 
+    createModal() {
+        this.editModal = new EditModal(this.task, this.list);
+    }
+
     checkTask() {
         if (this.taskCheck.checked) {
-            this.taskContainer.style.opacity = 0.5;
+            this.taskContainer.style.opacity = 0.2;
             this.task.setCompleted(true);
         } else {
             this.taskContainer.style.opacity = 1;
             this.task.setCompleted(false);
         }
+        localStorage.setItem('projects', JSON.stringify(this.list.getProjects()));
     };
 
     showDetails() {
         if (this.taskContainer.children[1] !== undefined) { return; }
 
         const details = document.createElement('div');
-        details.classList.add('details');
+        details.className = 'task-details';
         details.innerHTML = `
+        <div class="left">
+            <p><span class="bold">Task:</span> ${this.task.getName()}</p>
+            <p><span class="bold">Notes:</span> ${this.task.getDescription()}</p>
+        </div>
+        <div class="right">
+            <p><span class="bold">Due:</span> ${this.task.getFormattedDate()}</p>
+            <p><span class="bold">Priority:</span> ${this.task.getPriority()}</p>
+            <p><span class="bold">Project:</span> ${this.task.getProject()}</p>
+        </div>
         <span class="close ${this.id}">&times;</span>
-        <p>Task: ${this.task.getName()}</p>
-        <p>Description: ${this.task.getDescription()}</p>
-        <p>Due: ${this.task.getDate()}</p>
-        <p>Priority: ${this.task.getPriority()}</p>
-        <p>Project: ${this.task.getProject()}</p>
         `;
         this.taskContainer.appendChild(details);
 
@@ -98,13 +108,19 @@ export default class TaskDisplay {
         close.addEventListener('click', () => details.remove());
     }
 
-
     removeTask() {
         this.taskContainer.remove();
         this.list.removeTask(this.task);
     }
 
-    editTask() {
-        this.editModal.setOpenElem(this.taskEdit);
+    getPriorityColor() {
+        switch (this.task.getPriority()) {
+            case('Low'):
+                return '#007500';
+            case('Medium'):
+                return '#fc6a03';
+            case('High'):
+                return '#ff0000';
+        }
     }
 }
